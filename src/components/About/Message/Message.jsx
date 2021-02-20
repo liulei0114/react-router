@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import qs from 'querystring'
+import News from '../../News/News';
 export default class Message extends Component {
   state = {
     message: [
@@ -18,6 +18,13 @@ export default class Message extends Component {
 
     ]
 
+  }
+
+  isShowBtn = () => {
+    let nane = 'dfdgg'
+    return (
+      <News con={nane}></News>
+    )
   }
   render() {
     // * 第一种传值方式，路由传递
@@ -41,6 +48,8 @@ export default class Message extends Component {
               <p>国家编号：{item.id}</p>
               <p>国家名称：{item.info}</p>
               <p>国家内容：{con}</p>
+              { this.isShowBtn()}
+
             </div>
           )
         })

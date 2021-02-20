@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import './App.css';
 import Myheader from './components/Header/Header'
 import Home from './components/Home/Home'
+import UserList from './components/demo/UserList'
 import './App.css'
 export default class App extends Component {
 
@@ -10,6 +11,7 @@ export default class App extends Component {
       <div id='app'>
         <Myheader></Myheader>
         <Home></Home>
+        <UserList></UserList>
       </div>
     )
   }
