@@ -1,70 +1,141 @@
-# Getting Started with Create React App
+import MdEditor from "react-markdown-editor-lite";
+// 导入编辑器的样式
+import "react-markdown-editor-lite/lib/index.css";
+import React from "react";
+// 两种不同的解析器
+import MarkdownIt from "markdown-it";
+import ReactMarkdown from "react-markdown";
+import { Button, Tree } from "@arco-design/web-react";
+import _ from "lodash";
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+const mdParser = new MarkdownIt(/* Markdown-it options */);
 
-## Available Scripts
+type HTargetType = {
+  key: string;
+  level?: number;
+  hLevel: number;
+  title: string;
+  children?: HTargetType[];
+};
 
-In the project directory, you can run:
+export default function HomePage() {
+  const htmlStrRef = React.useRef("<h1>123</h1>");
 
-### `yarn start`
+  const [htmlStr, setHtmlStr] = React.useState<string>("");
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+  const [treeData, setTreeData] = React.useState([]);
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+  const toTree = (flatArr: HTargetType[]) => {
+    if (_.isEmpty(flatArr)) {
+      return [];
+    }
+    const tree: HTargetType[] = [];
+    const cloneArr = [...flatArr];
 
-### `yarn test`
+    // 依据指定级别查找该级别的子孙级，并删除掉曾经查找到的子孙级
+    const getChildrenByLevel = (
+      currentLevelItem: HTargetType,
+      arr: HTargetType[]
+    ) => {
+      if (!currentLevelItem) {
+        return;
+      }
+      // 将level值转成正数，再进行比拟
+      const minusCurrentLevel = -currentLevelItem.hLevel;
+      const children = [];
+      for (let i = 0, len = arr.length; i < len; i++) {
+        const levelItem = arr[i];
+        if (-levelItem.hLevel < minusCurrentLevel) {
+          children.push(levelItem);
+        } else {
+          // 只找最近那些子孙级
+          break;
+        }
+      }
+      // 从数组中删除曾经找到的那些子孙级，免得影响到其余子孙级的查找
+      if (children.length > 0) {
+        arr.splice(0, children.length);
+      }
+      return children;
+    };
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+    const getTree = (
+      result: HTargetType[],
+      arr: HTargetType[],
+      level: number
+    ) => {
+      // 首先将数组第一位移除掉，并增加到后果集中
+      let currentItem: HTargetType = arr.shift()!;
 
-### `yarn build`
+      currentItem.level = level;
+      result.push(currentItem);
+      while (arr.length > 0) {
+        if (!currentItem) {
+          return;
+        }
+        // 依据以后级别获取它的子孙级
+        const children = getChildrenByLevel(currentItem, arr);
+        // 如果以后级别没有子孙级则开始下一个
+        if (children!.length == 0) {
+          currentItem = arr.shift()!;
+          currentItem.level = level;
+          if (currentItem) {
+            result.push(currentItem);
+          }
+          continue;
+        }
+        currentItem.children = [];
+        // 查找到的子孙级持续查找子孙级
+        getTree(currentItem.children, children!, level + 1);
+      }
+    };
+    getTree(tree, cloneArr, 1);
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+    return tree;
+  };
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+  const transformObj = (hList: string[] | null) => {
+    if (hList === null) {
+      return [];
+    }
+    const foo = hList.map((item, index) => {
+      const hLevel = Number(item[2]);
+      const title = item.substring(4, item.length - 5);
+      return {
+        hLevel,
+        title,
+        key: `${hLevel}-${index}`,
+      };
+    });
+    return foo;
+  };
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+  const getHTarget = () => {
+    setHtmlStr(htmlStrRef.current);
+    const reg = new RegExp(/<h[1-6]>.+?<\/h[1-6]>/gi);
+    const hList = transformObj(htmlStrRef.current.match(reg));
+    setTreeData(toTree(hList));
+  };
 
-### `yarn eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `yarn build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+  const renderHTML = (text: string) => {
+    htmlStrRef.current = mdParser.render(text);
+    return htmlStrRef.current;
+  };
+  return (
+    <div>
+      <MdEditor style={{ height: 400 }} renderHTML={renderHTML} />
+      <Button type="primary" onClick={getHTarget}>
+        装换
+      </Button>
+      <Tree
+        treeData={treeData}
+        onSelect={(_, { node }) => {
+          const selectNode = Array.from(
+            document.getElementsByTagName(`h${node.props.hLevel}`)
+          ).find((item) => item.textContent === node.props.title);
+          selectNode?.scrollIntoView({ behavior: "smooth" });
+        }}
+      />
+    </div>
+  );
+}
